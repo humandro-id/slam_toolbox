@@ -206,6 +206,8 @@ void SlamToolbox::setROSInterfaces()
   scan_filter_sub_ =
     std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
     shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
+  // Cola 5 (antes 1): con cola 1 cualquier scan que llegue antes que su TF
+  // odom->pelvis (20 Hz) se descarta ("Message Filter dropping message").
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
     *scan_filter_sub_, *tf_, odom_frame_, 1, shared_from_this());
@@ -230,7 +232,10 @@ void SlamToolbox::publishTransformLoop(
       msg.transform = tf2::toMsg(map_to_odom_);
       msg.child_frame_id = odom_frame_;
       msg.header.frame_id = map_frame_;
-      msg.header.stamp = scan_timestamped + transform_timeout_;
+      // Estampar con el reloj actual (como upstream): si el flujo de scans se
+      // corta, el stamp del ultimo scan queda congelado y los lookups de TF de
+      // Nav2 fallan con errores de extrapolacion al pasado.
+      msg.header.stamp = this->now() + transform_timeout_;
       tfB_->sendTransform(msg);
     }
     r.sleep();
