@@ -83,8 +83,13 @@ void LifelongSlamToolbox::laserCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
+<<<<<<< HEAD
   // store scan header
   scan_header = scan->header;
+=======
+  // store scan timestamped
+  scan_timestamped = scan->header.stamp;
+>>>>>>> humandroid/FranRFH/g1
   // no odom info
   Pose2 pose;
   if (!pose_helper_->getOdomPose(pose, scan->header.stamp)) {
