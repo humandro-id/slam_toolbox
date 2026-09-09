@@ -72,7 +72,6 @@ LoopClosureAssistant::LoopClosureAssistant(
 }
 
 /*****************************************************************************/
-<<<<<<< HEAD
 void LoopClosureAssistant::setMapper(karto::Mapper * mapper)
 /*****************************************************************************/
 {
@@ -145,123 +144,23 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     scan_publisher_->publish(scan);
   }
 }
-=======
-void LoopClosureAssistant::processInteractiveFeedback(const
-  visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback)
-/*****************************************************************************/
-{
-  if (processor_type_ != PROCESS)
-  {
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 5, 
-      "Interactive mode is invalid outside processing mode.");
-    return;
-  }
-
-  const int id = std::stoi(feedback->marker_name, nullptr, 10) - 1;
-
-  // was depressed, something moved, and now released
-  if (feedback->event_type ==
-      visualization_msgs::msg::InteractiveMarkerFeedback::MOUSE_UP &&
-      feedback->mouse_point_valid)
-  {
-    addMovedNodes(id, Eigen::Vector3d(feedback->mouse_point.x,
-      feedback->mouse_point.y, tf2::getYaw(feedback->pose.orientation)));
-  }
-
-  // is currently depressed, being moved before release
-  if (feedback->event_type ==
-      visualization_msgs::msg::InteractiveMarkerFeedback::POSE_UPDATE)
-  {
-    // get scan
-    sensor_msgs::msg::LaserScan scan = scan_holder_->getCorrectedScan(id);
-
-    // get correct orientation
-    tf2::Quaternion quat(0.,0.,0.,1.0), msg_quat(0.,0.,0.,1.0);
-    double node_yaw, first_node_yaw;
-    solver_->GetNodeOrientation(id, node_yaw);
-    solver_->GetNodeOrientation(0, first_node_yaw);
-    tf2::Quaternion q1(0.,0.,0.,1.0);
-    q1.setEuler(0., 0., node_yaw - 3.14159);
-    tf2::Quaternion q2(0.,0.,0.,1.0);
-    q2.setEuler(0., 0., 3.14159);
-    quat *= q1;
-    quat *= q2;
-
-    // interactive move
-    tf2::convert(feedback->pose.orientation, msg_quat);
-    quat *= msg_quat;
-    quat.normalize();
-
-    // create correct transform
-    tf2::Transform transform;
-    transform.setOrigin(tf2::Vector3(feedback->pose.position.x,
-      feedback->pose.position.y, 0.));
-    transform.setRotation(quat);
-
-    // publish the scan visualization with transform
-    geometry_msgs::msg::TransformStamped msg;
-    tf2::convert(transform, msg.transform);
-    msg.child_frame_id = "scan_visualization";
-    msg.header.frame_id = feedback->header.frame_id;
-    msg.header.stamp = node_->now();
-    tfB_->sendTransform(msg);
-
-    scan.header.frame_id = "scan_visualization";
-    scan.header.stamp = node_->now();
-    scan_publisher_->publish(scan);
-  }
-}
-
->>>>>>> humandroid/FranRFH/g1
 
 /*****************************************************************************/
 void LoopClosureAssistant::publishGraph()
 /*****************************************************************************/
 {
   interactive_server_->clear();
-<<<<<<< HEAD
   auto graph = solver_->getGraph();
-=======
-  std::unordered_map<int, Eigen::Vector3d> * graph = solver_->getGraph();
->>>>>>> humandroid/FranRFH/g1
 
   if (graph->size() == 0) {
     return;
   }
 
-<<<<<<< HEAD
   RCLCPP_DEBUG(node_->get_logger(), "Graph size: %zu", graph->size());
-=======
-  RCLCPP_DEBUG(node_->get_logger(), "Graph size: %i", (int)graph->size());
->>>>>>> humandroid/FranRFH/g1
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
     interactive_mode = interactive_mode_;
-<<<<<<< HEAD
-=======
-  }
-
-  visualization_msgs::msg::MarkerArray marray;
-  visualization_msgs::msg::Marker m = vis_utils::toMarker(map_frame_,
-      "slam_toolbox", 0.1, node_);
-
-  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it) {
-    m.id = it->first + 1;
-    m.pose.position.x = it->second(0);
-    m.pose.position.y = it->second(1);
-
-    if (interactive_mode && enable_interactive_mode_) {
-      visualization_msgs::msg::InteractiveMarker int_marker =
-        vis_utils::toInteractiveMarker(m, 0.3, node_);
-      interactive_server_->insert(int_marker,
-        std::bind(
-        &LoopClosureAssistant::processInteractiveFeedback,
-        this, std::placeholders::_1));
-    } else {
-      marray.markers.push_back(m);
-    }
->>>>>>> humandroid/FranRFH/g1
   }
 
   const auto & vertices = mapper_->GetGraph()->GetVertices();
